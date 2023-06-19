@@ -2,6 +2,14 @@
   "name": "hardhat-project",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "dotenv": "^16.3.1",
     "hardhat": "^2.14.0"
+  },
+  "dependencies": {
+    "@aave/core-v3": "^1.17.2",
+    "@aragon/osx": "^1.2.0",
+    "@openzeppelin/contracts": "^4.8.3",
+    "@openzeppelin/contracts-upgradeable": "^4.8.3",
+    "@openzeppelin/hardhat-upgrades": "^1.28.0"
   }
 }
