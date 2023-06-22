@@ -1,6 +1,8 @@
 {
   "name": "hardhat-project",
   "devDependencies": {
+    "@aragon/osx-ethers": "^1.2.1",
+    "@aragon/sdk-client": "^1.6.0",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "dotenv": "^16.3.1",
     "hardhat": "^2.14.0"
