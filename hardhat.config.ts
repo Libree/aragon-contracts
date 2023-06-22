@@ -2,6 +2,7 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import '@openzeppelin/hardhat-upgrades';
 import * as dotenv from 'dotenv';
+import "./tasks"
 
 dotenv.config();
 

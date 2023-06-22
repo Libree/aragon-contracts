@@ -7,6 +7,10 @@ import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
 import {ICreditDelegationToken} from "@aave/core-v3/contracts/interfaces/ICreditDelegationToken.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
+
+/// @title CreditDelegator
+/// @author Libree
+/// @notice The credit delegator plugin enables DAOs to deposit their treasury into the Aave protocol and open credit lines.
 contract CreditDelegator is PluginUUPSUpgradeable {
     address public poolAddress;
 
