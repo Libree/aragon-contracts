@@ -8,13 +8,19 @@ import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
 import {PluginSetup, IPluginSetup} from "@aragon/osx/framework/plugin/setup/PluginSetup.sol";
 import {CreditDelegator} from "./CreditDelegator.sol";
 
+/// @title CreditDelegatorSetup
+/// @author Libree
+/// @notice The setup contract of the `CreditDelegatorSetup` plugin.
 contract CreditDelegatorSetup is PluginSetup {
+    /// @notice The address of `CreditDelegatorSetup` plugin logic contract to be used in creating proxy contracts.
     CreditDelegator private immutable creditDelegator;
 
+    /// @notice The contract constructor, that deploys the `CreditDelegatorSetup` plugin logic contract.
     constructor() {
         creditDelegator = new CreditDelegator();
     }
 
+    /// @inheritdoc IPluginSetup
     function prepareInstallation(
         address _dao,
         bytes calldata _data
@@ -36,7 +42,7 @@ contract CreditDelegatorSetup is PluginSetup {
 
         // Prepare permissions
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](1);
+            memory permissions = new PermissionLib.MultiTargetPermission[](3);
 
         // Grant `EXECUTE_PERMISSION` on the DAO to the plugin.
         permissions[0] = PermissionLib.MultiTargetPermission(
@@ -47,9 +53,26 @@ contract CreditDelegatorSetup is PluginSetup {
             DAO(payable(_dao)).EXECUTE_PERMISSION_ID()
         );
 
+        permissions[1] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Grant,
+            plugin,
+            _dao,
+            PermissionLib.NO_CONDITION,
+            creditDelegator.WITHDRAWN_AAVE_PERMISSION_ID()
+        );
+
+        permissions[2] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Grant,
+            plugin,
+            _dao,
+            PermissionLib.NO_CONDITION,
+            creditDelegator.APPROVE_DELEGATION_PERMISSION_ID()
+        );
+
         preparedSetupData.permissions = permissions;
     }
 
+    /// @inheritdoc IPluginSetup
     function prepareUninstallation(
         address _dao,
         SetupPayload calldata _payload
@@ -59,7 +82,31 @@ contract CreditDelegatorSetup is PluginSetup {
         returns (PermissionLib.MultiTargetPermission[] memory permissions)
     {
         // Prepare permissions
-        permissions = new PermissionLib.MultiTargetPermission[](1);
+        permissions = new PermissionLib.MultiTargetPermission[](3);
+
+        permissions[0] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Revoke,
+            _dao,
+            _payload.plugin,
+            PermissionLib.NO_CONDITION,
+            DAO(payable(_dao)).EXECUTE_PERMISSION_ID()
+        );
+
+        permissions[1] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Revoke,
+            _payload.plugin,
+            _dao,
+            PermissionLib.NO_CONDITION,
+            creditDelegator.WITHDRAWN_AAVE_PERMISSION_ID()
+        );
+
+        permissions[2] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Revoke,
+            _payload.plugin,
+            _dao,
+            PermissionLib.NO_CONDITION,
+            creditDelegator.APPROVE_DELEGATION_PERMISSION_ID()
+        );
     }
 
     /// @inheritdoc IPluginSetup
