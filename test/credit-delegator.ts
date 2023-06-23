@@ -22,7 +22,11 @@ describe('Credit delegator plugin', function () {
     const WETH_ADDRESS: string = '0xD087ff96281dcf722AEa82aCA57E8545EA9e6C96';
     const USDC_DEBT_ADDRESS: string = '0xe336cbd5416cdb6ce70ba16d9952a963a81a918d';
     const USDC = '0xe9DcE89B076BA6107Bb64EF30678efec11939234'
-
+    const APPROVE_DELEGATION_PERMISSION_ID = ethers.utils.id('APPROVE_DELEGATION_PERMISSION');
+    const EXECUTE_PERMISSION_ID = ethers.utils.id('EXECUTE_PERMISSION');
+    const WITHDRAWN_AAVE_PERMISSION_ID = ethers.utils.id(
+        'WITHDRAWN_AAVE_PERMISSION'
+    );
 
     before(async () => {
         signers = await ethers.getSigners();
@@ -52,7 +56,19 @@ describe('Credit delegator plugin', function () {
         await daoLender.grant(
             daoLender.address,
             creditDelegatorLender.address,
-            ethers.utils.id('EXECUTE_PERMISSION')
+            EXECUTE_PERMISSION_ID
+        );
+
+        await daoLender.grant(
+            creditDelegatorLender.address,
+            ownerAddress,
+            WITHDRAWN_AAVE_PERMISSION_ID
+        );
+
+        await daoLender.grant(
+            creditDelegatorLender.address,
+            ownerAddress,
+            APPROVE_DELEGATION_PERMISSION_ID
         );
 
         this.upgrade = {
@@ -62,6 +78,10 @@ describe('Credit delegator plugin', function () {
         };
 
     });
+
+    function initializePlugin() {
+        return creditDelegatorLender.initialize(daoLender.address, POOL_ADDRESS);
+    }
 
     describe('Upgrade', () => {
         beforeEach(async function () {
@@ -91,10 +111,12 @@ describe('Credit delegator plugin', function () {
 
 
     describe('Delegate credit: ', async () => {
-        it('Deposit 10 WETH in DAO treasury', async () => {
+        beforeEach(async () => {
+            await initializePlugin();
+        });
 
+        it('Deposit 10 WETH in DAO treasury', async () => {
             const depositAmount = ethers.utils.parseUnits("10", "ether")
-            await creditDelegatorLender.initialize(daoLender.address, POOL_ADDRESS);
             const aavePool = await ethers.getContractAt('IPool', POOL_ADDRESS)
 
             const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
@@ -119,10 +141,7 @@ describe('Credit delegator plugin', function () {
         it('Should approve delegation', async () => {
             const depositAmount = ethers.utils.parseUnits("10", "ether")
             const amount = 1000
-            await creditDelegatorLender.initialize(daoLender.address, POOL_ADDRESS);
-
             const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
-
             await weth.approve(creditDelegatorLender.address, depositAmount)
 
             await creditDelegatorLender.supply(
@@ -140,7 +159,21 @@ describe('Credit delegator plugin', function () {
             const approvedAmount = await debtToken.borrowAllowance(daoLender.address, borrowerAddress)
 
             expect(approvedAmount.toNumber()).to.be.equals(approvedAmount)
+        });
 
+        it('Should revert approve delegation not authorized', async () => {
+            const amount = 1000
+            await expect(creditDelegatorLender.connect(signers[1]).approveDelegation(
+                USDC_DEBT_ADDRESS,
+                borrowerAddress,
+                amount
+            )).to.be.revertedWithCustomError(creditDelegatorLender, 'DaoUnauthorized')
+                .withArgs(
+                    daoLender.address,
+                    creditDelegatorLender.address,
+                    signers[1].address,
+                    APPROVE_DELEGATION_PERMISSION_ID
+                );
         });
 
 
@@ -148,7 +181,6 @@ describe('Credit delegator plugin', function () {
             const depositAmount = ethers.utils.parseUnits("10", "ether")
             const amount = 1000
             const interestRateMode = 1
-            await creditDelegatorLender.initialize(daoLender.address, POOL_ADDRESS);
 
             const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
             const usdc = await ethers.getContractAt('IERC20', USDC)
@@ -167,7 +199,6 @@ describe('Credit delegator plugin', function () {
             )
 
             const aavePool = await ethers.getContractAt('IPool', POOL_ADDRESS)
-
             const balanceBefore = await usdc.balanceOf(borrowerAddress)
 
             await aavePool.connect(borrower).borrow(
@@ -184,5 +215,54 @@ describe('Credit delegator plugin', function () {
             expect(balanceAfter.toNumber()).to.be.equals(amount)
 
         });
+
+        it('Should withdrawn funds from treasury', async () => {
+            const depositAmount = ethers.utils.parseUnits("1", "ether")
+            const withdrawnAmount = ethers.utils.parseUnits("1", "ether")
+            const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
+
+            await weth.approve(creditDelegatorLender.address, depositAmount)
+
+            await creditDelegatorLender.supply(
+                WETH_ADDRESS,
+                depositAmount
+            )
+
+            const balanceBefore = await weth.balanceOf(ownerAddress)
+
+            await creditDelegatorLender.withdrawn(
+                WETH_ADDRESS,
+                withdrawnAmount,
+                ownerAddress
+            )
+
+            const balanceAfter = await weth.balanceOf(ownerAddress)
+            expect(balanceBefore.add(withdrawnAmount)).equals(balanceAfter)
+        });
+
+        it('Should revert withdrawn funds from treasury', async () => {
+            const depositAmount = ethers.utils.parseUnits("1", "ether")
+            const withdrawnAmount = ethers.utils.parseUnits("1", "ether")
+            const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
+
+            await weth.approve(creditDelegatorLender.address, depositAmount)
+
+            await creditDelegatorLender.supply(
+                WETH_ADDRESS,
+                depositAmount
+            )
+
+            await expect(creditDelegatorLender.connect(signers[1]).withdrawn(
+                WETH_ADDRESS,
+                withdrawnAmount,
+                ownerAddress
+            )).to.be.revertedWithCustomError(creditDelegatorLender, 'DaoUnauthorized')
+                .withArgs(
+                    daoLender.address,
+                    creditDelegatorLender.address,
+                    signers[1].address,
+                    WITHDRAWN_AAVE_PERMISSION_ID
+                );
+        })
     })
 });
