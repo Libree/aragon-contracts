@@ -6,18 +6,18 @@ import {IDAO} from "@aragon/osx/core/dao/IDAO.sol";
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
 import {PluginSetup, IPluginSetup} from "@aragon/osx/framework/plugin/setup/PluginSetup.sol";
-import {Vault} from "./Vault.sol";
+import {VaultManager} from "./VaultManager.sol";
 
 /// @title VaultSetup
 /// @author Libree
 /// @notice The setup contract of the `Vault` plugin.
-contract VaultSetup is PluginSetup {
+contract VaultManagerSetup is PluginSetup {
     /// @notice The address of `Vault` plugin logic contract to be used in creating proxy contracts.
-    Vault private immutable vault;
+    VaultManager private immutable vaultManager;
 
     /// @notice The contract constructor, that deploys the `VaultSetup` plugin logic contract.
     constructor() {
-        vault = new Vault();
+        vaultManager = new VaultManager();
     }
 
     /// @inheritdoc IPluginSetup
@@ -30,8 +30,8 @@ contract VaultSetup is PluginSetup {
     {
         // Prepare and Deploy the plugin proxy.
         plugin = createERC1967Proxy(
-            address(vault),
-            abi.encodeWithSelector(Vault.initialize.selector, _dao)
+            address(vaultManager),
+            abi.encodeWithSelector(VaultManager.initialize.selector, _dao)
         );
     }
 
@@ -47,6 +47,6 @@ contract VaultSetup is PluginSetup {
 
     /// @inheritdoc IPluginSetup
     function implementation() external view returns (address) {
-        return address(vault);
+        return address(vaultManager);
     }
 }

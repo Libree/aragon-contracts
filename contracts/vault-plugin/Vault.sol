@@ -4,21 +4,14 @@ pragma solidity 0.8.17;
 
 import "../lib/MultiToken.sol";
 
-import {PluginUUPSUpgradeable, IDAO} from "@aragon/osx/core/plugin/PluginUUPSUpgradeable.sol";
-import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
-import {ICreditDelegationToken} from "@aave/core-v3/contracts/interfaces/ICreditDelegationToken.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
 /// @title Vault
 /// @author Libree
-/// @notice The vault plugin enables DAOs to manage assets in an isolated vault.
-contract Vault is PluginUUPSUpgradeable, IERC721Receiver, IERC1155Receiver {
+/// @notice The vault factory to create vaults from the vault plugin
+contract Vault is IERC721Receiver, IERC1155Receiver {
     using MultiToken for MultiToken.Asset;
-
-    /// @notice The ID of the permission required to call the `approveDelegation` function.
-    bytes32 public constant VAULT_WITHDRAWN_PERMISSION_ID =
-        keccak256("VAULT_WITHDRAWN_PERMISSION");
 
     /**
      * @dev Emitted when asset transfer happens from an `origin` address to a vault.
@@ -39,17 +32,15 @@ contract Vault is PluginUUPSUpgradeable, IERC721Receiver, IERC1155Receiver {
         address indexed beneficiary
     );
 
-    /// @notice Initializes the contract.
-    /// @param _dao The associated DAO.
-    /// @dev This method is required to support [ERC-1167](https://eips.ethereum.org/EIPS/eip-1167).
-    function initialize(IDAO _dao) external initializer {
-        __PluginUUPSUpgradeable_init(_dao);
+    mapping(address => bool) private allowedAddreses;
+
+    constructor(address[] memory _allowedAddresses) {
+        for (uint256 i = 0; i < _allowedAddresses.length; i++) {
+            allowedAddreses[_allowedAddresses[i]] = true;
+        }
     }
 
-    function deposit(
-        MultiToken.Asset memory asset,
-        address origin
-    ) external {
+    function deposit(MultiToken.Asset memory asset, address origin) external {
         uint256 originalBalance = asset.balanceOf(address(this));
 
         asset.transferAssetFrom(origin, address(this));
@@ -60,8 +51,10 @@ contract Vault is PluginUUPSUpgradeable, IERC721Receiver, IERC1155Receiver {
 
     function withdrawn(
         MultiToken.Asset memory asset,
-        address beneficiary
-    ) external auth(VAULT_WITHDRAWN_PERMISSION_ID) {
+        address beneficiary,
+        address sender
+    ) external {
+        require(allowedAddreses[sender], "not allowed");
         uint256 originalBalance = asset.balanceOf(beneficiary);
 
         asset.safeTransferAssetFrom(address(this), beneficiary);
@@ -116,13 +109,7 @@ contract Vault is PluginUUPSUpgradeable, IERC721Receiver, IERC1155Receiver {
 
     function supportsInterface(
         bytes4 interfaceId
-    )
-        public
-        view
-        virtual
-        override(IERC165, PluginUUPSUpgradeable)
-        returns (bool)
-    {
+    ) public view virtual override returns (bool) {
         return
             interfaceId == type(IERC165).interfaceId ||
             interfaceId == type(IERC721Receiver).interfaceId ||

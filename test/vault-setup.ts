@@ -2,11 +2,11 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
-import { VaultSetup } from '../typechain-types';
+import { VaultManagerSetup } from '../typechain-types';
 import { deployNewDAO } from "./utils/dao"
 import metadata from '../contracts/vault-plugin/build-metadata.json';
 import {
-  Vault__factory
+  VaultManager__factory
 } from '../typechain-types';
 
 let defaultData: any;
@@ -14,9 +14,9 @@ let defaultData: any;
 const abiCoder = ethers.utils.defaultAbiCoder;
 
 
-describe('VaultSetup', function () {
+describe('VaultManagerSetup', function () {
   let signers: SignerWithAddress[];
-  let vaultSetup: VaultSetup;
+  let vaultSetup: VaultManagerSetup;
   let targetDao: any;
   const EMPTY_DATA = '0x';
 
@@ -25,7 +25,7 @@ describe('VaultSetup', function () {
     targetDao = await deployNewDAO(signers[0].address);
 
     const VaultSetup = await ethers.getContractFactory(
-      'VaultSetup'
+      'VaultManagerSetup'
     );
 
     vaultSetup = await VaultSetup.deploy();
@@ -79,7 +79,7 @@ describe('VaultSetup', function () {
 
       await vaultSetup.prepareInstallation(daoAddress, defaultData);
 
-      const factory = new Vault__factory(signers[0]);
+      const factory = new VaultManager__factory(signers[0]);
       const vaultAddressContract = factory.attach(anticipatedPluginAddress);
 
       expect(await vaultAddressContract.dao()).to.be.equal(daoAddress);
