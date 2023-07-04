@@ -4,7 +4,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 import { CreditDelegatorSetup } from '../typechain-types';
 import { deployNewDAO } from "./utils/dao"
-import metadata from '../contracts/credit-delegation-plugin/build-metadata.json';
+import metadata from '../contracts/plugins/credit-delegation-plugin/build-metadata.json';
 import { Operation } from "./utils/types";
 import {
   CreditDelegator__factory

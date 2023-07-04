@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.17;
 
-import "../lib/MultiToken.sol";
+import "../../lib/MultiToken.sol";
 
 import {PluginUUPSUpgradeable, IDAO} from "@aragon/osx/core/plugin/PluginUUPSUpgradeable.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
