@@ -30,6 +30,7 @@ describe('VaultManager plugin', function () {
     let testERC721: TestERC721
     const ERC20_VAULT_NAME: string = "ERC20_VAULT"
     const ERC721_VAULT_NAME: string = "ERC721_VAULT"
+    const VAULT_ID: number = 0
 
     before(async () => {
         signers = await ethers.getSigners();
@@ -117,9 +118,8 @@ describe('VaultManager plugin', function () {
         });
 
         it('Deposit ERC20 tokens in vault', async () => {
-
             await vaultManager.createVault(ERC20_VAULT_NAME, []);
-            const vaultAddress = await vaultManager.getVault(ERC20_VAULT_NAME);
+            const vaultAddress = await vaultManager.getVault(VAULT_ID);
 
             const balanceBefore = await testERC20.balanceOf(vaultAddress)
 
@@ -130,7 +130,7 @@ describe('VaultManager plugin', function () {
                 id: 0,
                 amount: 100
             }, ownerAddress,
-                ERC20_VAULT_NAME)
+                VAULT_ID)
 
             const balanceAfter = await testERC20.balanceOf(vaultAddress)
 
@@ -143,7 +143,7 @@ describe('VaultManager plugin', function () {
         it('Deposit ERC721 tokens in vault', async () => {
 
             await vaultManager.createVault(ERC721_VAULT_NAME, []);
-            const vaultAddress = await vaultManager.getVault(ERC721_VAULT_NAME);
+            const vaultAddress = await vaultManager.getVault(VAULT_ID);
 
             const balanceBefore = await testERC721.balanceOf(vaultAddress)
 
@@ -156,7 +156,7 @@ describe('VaultManager plugin', function () {
                 id: 0,
                 amount: 0
             }, ownerAddress,
-                ERC721_VAULT_NAME
+                VAULT_ID
             )
 
             const balanceAfter = await testERC721.balanceOf(vaultAddress)
@@ -169,7 +169,7 @@ describe('VaultManager plugin', function () {
         it('Should revert not authorized withdrawn ERC20', async () => {
 
             await vaultManager.createVault(ERC20_VAULT_NAME, []);
-            const vaultAddress = await vaultManager.getVault(ERC20_VAULT_NAME);
+            const vaultAddress = await vaultManager.getVault(VAULT_ID);
 
             const balanceBefore = await testERC20.balanceOf(vaultAddress)
 
@@ -180,7 +180,7 @@ describe('VaultManager plugin', function () {
                 id: 0,
                 amount: 100
             }, ownerAddress,
-                ERC20_VAULT_NAME)
+                VAULT_ID)
 
             const balanceAfter = await testERC20.balanceOf(vaultAddress)
 
@@ -193,7 +193,7 @@ describe('VaultManager plugin', function () {
                 id: 0,
                 amount: 100
             }, nonAuthUser.address,
-                ERC20_VAULT_NAME)).to.be.revertedWithCustomError(vaultManager, 'DaoUnauthorized')
+                VAULT_ID)).to.be.revertedWithCustomError(vaultManager, 'DaoUnauthorized')
                 .withArgs(
                     dao.address,
                     vaultManager.address,
@@ -207,7 +207,7 @@ describe('VaultManager plugin', function () {
         it('Should revert not authorized withdrawn ERC721', async () => {
 
             await vaultManager.createVault(ERC721_VAULT_NAME, []);
-            const vaultAddress = await vaultManager.getVault(ERC721_VAULT_NAME);
+            const vaultAddress = await vaultManager.getVault(VAULT_ID);
 
             const balanceBefore = await testERC721.balanceOf(vaultAddress)
 
@@ -220,7 +220,7 @@ describe('VaultManager plugin', function () {
                 id: 1,
                 amount: 0
             }, ownerAddress,
-                ERC721_VAULT_NAME)
+            VAULT_ID)
 
             const balanceAfter = await testERC721.balanceOf(vaultAddress)
 
@@ -233,7 +233,7 @@ describe('VaultManager plugin', function () {
                 id: 1,
                 amount: 0
             }, nonAuthUser.address,
-                ERC721_VAULT_NAME)).to.be.revertedWithCustomError(vaultManager, 'DaoUnauthorized')
+            VAULT_ID)).to.be.revertedWithCustomError(vaultManager, 'DaoUnauthorized')
                 .withArgs(
                     dao.address,
                     vaultManager.address,
@@ -245,7 +245,7 @@ describe('VaultManager plugin', function () {
         it('Should withdrawn erc20 from vault', async () => {
 
             await vaultManager.createVault(ERC20_VAULT_NAME, [ownerAddress]);
-            const vaultAddress = await vaultManager.getVault(ERC20_VAULT_NAME);
+            const vaultAddress = await vaultManager.getVault(VAULT_ID);
 
             const balanceVaultBefore = await testERC20.balanceOf(vaultAddress)
 
@@ -256,7 +256,7 @@ describe('VaultManager plugin', function () {
                 id: 0,
                 amount: 100
             }, ownerAddress,
-                ERC20_VAULT_NAME)
+                VAULT_ID)
 
             const balanceVaultAfter = await testERC20.balanceOf(vaultAddress)
 
@@ -271,7 +271,7 @@ describe('VaultManager plugin', function () {
                 id: 0,
                 amount: 100
             }, nonAuthUser.address,
-                ERC20_VAULT_NAME)
+                VAULT_ID)
 
             const balanceUserAfter = await testERC20.balanceOf(nonAuthUser.address)
 
@@ -283,7 +283,7 @@ describe('VaultManager plugin', function () {
         it('Should withdrawn erc721 from vault', async () => {
 
             await vaultManager.createVault(ERC721_VAULT_NAME, [ownerAddress]);
-            const vaultAddress = await vaultManager.getVault(ERC721_VAULT_NAME);
+            const vaultAddress = await vaultManager.getVault(VAULT_ID);
 
             const balanceVaultBefore = await testERC721.balanceOf(vaultAddress)
 
@@ -296,7 +296,7 @@ describe('VaultManager plugin', function () {
                 id: 2,
                 amount: 0
             }, ownerAddress,
-                ERC721_VAULT_NAME)
+                VAULT_ID)
 
             const balanceVaultAfter = await testERC721.balanceOf(vaultAddress)
 
@@ -311,7 +311,7 @@ describe('VaultManager plugin', function () {
                 id: 2,
                 amount: 0
             }, nonAuthUser.address,
-                ERC721_VAULT_NAME)
+                VAULT_ID)
 
             const balanceUserAfter = await testERC721.balanceOf(nonAuthUser.address)
 
