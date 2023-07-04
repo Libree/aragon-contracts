@@ -4,7 +4,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 import { VaultManagerSetup } from '../typechain-types';
 import { deployNewDAO } from "./utils/dao"
-import metadata from '../contracts/vault-plugin/build-metadata.json';
+import metadata from '../contracts/plugins/vault-plugin/build-metadata.json';
 import {
   VaultManager__factory
 } from '../typechain-types';

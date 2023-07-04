@@ -4,7 +4,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 import { SubgovernanceSetup } from '../typechain-types';
 import { deployNewDAO } from "./utils/dao"
-import metadata from '../contracts/subgovernance-plugin/build-metadata.json';
+import metadata from '../contracts/plugins/subgovernance-plugin/build-metadata.json';
 import {
   Subgovernance__factory
 } from '../typechain-types';
