@@ -27,6 +27,9 @@ describe('Credit delegator plugin', function () {
     const WITHDRAWN_AAVE_PERMISSION_ID = ethers.utils.id(
         'WITHDRAWN_AAVE_PERMISSION'
     );
+    const BORROW_AAVE_PERMISSION_ID = ethers.utils.id(
+        'BORROW_AAVE_PERMISSION'
+    );
 
     before(async () => {
         signers = await ethers.getSigners();
@@ -69,6 +72,12 @@ describe('Credit delegator plugin', function () {
             creditDelegatorLender.address,
             ownerAddress,
             APPROVE_DELEGATION_PERMISSION_ID
+        );
+
+        await daoLender.grant(
+            creditDelegatorLender.address,
+            ownerAddress,
+            BORROW_AAVE_PERMISSION_ID
         );
 
         this.upgrade = {
@@ -213,6 +222,38 @@ describe('Credit delegator plugin', function () {
 
             expect(balanceBefore.toNumber()).to.be.equals(0)
             expect(balanceAfter.toNumber()).to.be.equals(amount)
+
+        });
+
+
+        it('Should borrow using DAO collateral treasury', async () => {
+            const depositAmount = ethers.utils.parseUnits("1", "ether")
+            const amount = 1000
+            const interestRateMode = 1
+
+            const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
+            const usdc = await ethers.getContractAt('IERC20', USDC)
+
+            await weth.approve(creditDelegatorLender.address, depositAmount)
+
+            const balanceBefore = await usdc.balanceOf(daoLender.address)
+
+            await creditDelegatorLender.supply(
+                WETH_ADDRESS,
+                depositAmount
+            )
+
+            await creditDelegatorLender.borrow(
+                USDC,
+                amount,
+                interestRateMode,
+                0,
+                daoLender.address
+            )
+
+            const balanceAfter = await usdc.balanceOf(daoLender.address)
+
+            expect(balanceAfter.toNumber()).to.be.equals(balanceBefore.toNumber() + amount)
 
         });
 
