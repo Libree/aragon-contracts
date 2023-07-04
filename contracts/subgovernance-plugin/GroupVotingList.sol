@@ -5,7 +5,7 @@ pragma solidity 0.8.17;
 import {Addresslist} from "@aragon/osx/plugins/utils/Addresslist.sol";
 
 /// @title GroupVotingList
-/// @notice Creates an addresslist for eacg group
+/// @notice Creates an addresslist for each group
 /// @dev This contract inherits from `Addresslist`
 contract GroupVotingList is Addresslist {
     function addAddresses(address[] calldata _newAddresses) public {
