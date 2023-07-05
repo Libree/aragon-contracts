@@ -5,7 +5,6 @@ pragma solidity 0.8.17;
 import {PluginUUPSUpgradeable, IDAO} from "@aragon/osx/core/plugin/PluginUUPSUpgradeable.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import "hardhat/console.sol";
 
 /// @title Uniswapv3s
 /// @author Libree
