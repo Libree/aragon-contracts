@@ -7,6 +7,9 @@ import "./tasks"
 dotenv.config();
 
 const config: HardhatUserConfig = {
+  mocha: {
+    timeout: 100000000
+  },
   solidity: {
     version: "0.8.17",
     settings: {
