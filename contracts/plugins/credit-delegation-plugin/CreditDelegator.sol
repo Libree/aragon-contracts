@@ -25,6 +25,10 @@ contract CreditDelegator is PluginUUPSUpgradeable {
     bytes32 public constant BORROW_AAVE_PERMISSION_ID =
         keccak256("BORROW_AAVE_PERMISSION");
 
+    /// @notice The ID of the permission required to call the `borrowAndTransfer` function.
+    bytes32 public constant BORROW_AND_TRANSFER_AAVE_PERMISSION_ID =
+        keccak256("BORROW_AND_TRANSFER_AAVE_PERMISSION");
+
     /// @notice Initializes the contract.
     /// @param _dao The associated DAO.
     /// @dev This method is required to support [ERC-1167](https://eips.ethereum.org/EIPS/eip-1167).
@@ -126,6 +130,50 @@ contract CreditDelegator is PluginUUPSUpgradeable {
                 _interestRateMode,
                 _referralCode,
                 _onBehalfOf
+            )
+        });
+
+        dao().execute({_callId: "", _actions: actions, _allowFailureMap: 0});
+    }
+
+    /// @notice Borrows from aave pool and transfer to beneficiary
+    /// @param _asset The address of the asset to borrow
+    /// @param _amount The asset amount to borrow
+    /// @param _interestRateMode Interest rate mode
+    /// @param _referralCode Referral code
+    /// @param _onBehalfOf If borrowing on behalf of another account
+    function borrowAndTransfer(
+        address _asset,
+        uint256 _amount,
+        uint256 _interestRateMode,
+        uint16 _referralCode,
+        address _onBehalfOf,
+        address _beneficiary
+    ) external auth(BORROW_AND_TRANSFER_AAVE_PERMISSION_ID) {
+        IDAO.Action[] memory actions = new IDAO.Action[](2);
+
+        actions[0] = IDAO.Action({
+            to: poolAddress,
+            value: 0 ether,
+            data: abi.encodeWithSelector(
+                bytes4(
+                    keccak256("borrow(address,uint256,uint256,uint16,address)")
+                ),
+                _asset,
+                _amount,
+                _interestRateMode,
+                _referralCode,
+                _onBehalfOf
+            )
+        });
+
+        actions[1] = IDAO.Action({
+            to: _asset,
+            value: 0 ether,
+            data: abi.encodeWithSelector(
+                bytes4(keccak256("transfer(address,uint256)")),
+                _beneficiary,
+                _amount
             )
         });
 
