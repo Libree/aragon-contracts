@@ -31,6 +31,10 @@ describe('Credit delegator plugin', function () {
         'BORROW_AAVE_PERMISSION'
     );
 
+    const BORROW_AND_TRANSFER_AAVE_PERMISSION_ID = ethers.utils.id(
+        'BORROW_AND_TRANSFER_AAVE_PERMISSION'
+    );
+
     before(async () => {
         signers = await ethers.getSigners();
         ownerAddress = await signers[0].getAddress();
@@ -78,6 +82,12 @@ describe('Credit delegator plugin', function () {
             creditDelegatorLender.address,
             ownerAddress,
             BORROW_AAVE_PERMISSION_ID
+        );
+
+        await daoLender.grant(
+            creditDelegatorLender.address,
+            ownerAddress,
+            BORROW_AND_TRANSFER_AAVE_PERMISSION_ID
         );
 
         this.upgrade = {
@@ -253,6 +263,42 @@ describe('Credit delegator plugin', function () {
 
             const balanceAfter = await usdc.balanceOf(daoLender.address)
 
+            expect(balanceAfter.toNumber()).to.be.equals(balanceBefore.toNumber() + amount)
+
+        });
+
+
+        it('Should borrow using DAO collateral treasury and transfer to beneficiary', async () => {
+            const depositAmount = ethers.utils.parseUnits("1", "ether")
+            const amount = 1000
+            const interestRateMode = 1
+            const beneficiary = signers[6].address
+
+            const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
+            const usdc = await ethers.getContractAt('IERC20', USDC)
+
+            await weth.approve(creditDelegatorLender.address, depositAmount)
+
+            const balanceBefore = await usdc.balanceOf(beneficiary)
+
+            await creditDelegatorLender.supply(
+                WETH_ADDRESS,
+                depositAmount
+            )
+
+            await creditDelegatorLender.borrowAndTransfer(
+                USDC,
+                amount,
+                interestRateMode,
+                0,
+                daoLender.address,
+                beneficiary
+            )
+
+            const balanceAfter = await usdc.balanceOf(beneficiary)
+
+            expect(balanceBefore).to.be.equals(0)
+            expect(balanceAfter).to.be.equals(amount)
             expect(balanceAfter.toNumber()).to.be.equals(balanceBefore.toNumber() + amount)
 
         });
