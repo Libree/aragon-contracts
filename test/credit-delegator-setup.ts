@@ -13,13 +13,16 @@ import {
 let defaultData: any;
 
 const abiCoder = ethers.utils.defaultAbiCoder;
-
+ 
 // Permissions
 const WITHDRAWN_AAVE_PERMISSION_ID = ethers.utils.id(
   'WITHDRAWN_AAVE_PERMISSION'
 );
 const APPROVE_DELEGATION_PERMISSION_ID = ethers.utils.id('APPROVE_DELEGATION_PERMISSION');
 const EXECUTE_PERMISSION_ID = ethers.utils.id('EXECUTE_PERMISSION');
+const BORROW_AAVE_PERMISSION_ID = ethers.utils.id('BORROW_AAVE_PERMISSION');
+const BORROW_AND_TRANSFER_AAVE_PERMISSION_ID = ethers.utils.id('BORROW_AND_TRANSFER_AAVE_PERMISSION');
+
 
 describe('CreditDelegatorSetup', function () {
   let signers: SignerWithAddress[];
@@ -78,7 +81,7 @@ describe('CreditDelegatorSetup', function () {
 
       expect(plugin).to.be.equal(anticipatedPluginAddress);
       expect(helpers.length).to.be.equal(0);
-      expect(permissions.length).to.be.equal(3);
+      expect(permissions.length).to.be.equal(5);
 
       expect(permissions).to.deep.equal([
         [
@@ -102,6 +105,20 @@ describe('CreditDelegatorSetup', function () {
           AddressZero,
           APPROVE_DELEGATION_PERMISSION_ID,
         ],
+        [
+          Operation.Grant,
+          plugin,
+          targetDao.address,
+          AddressZero,
+          BORROW_AAVE_PERMISSION_ID,
+        ],
+        [
+          Operation.Grant,
+          plugin,
+          targetDao.address,
+          AddressZero,
+          BORROW_AND_TRANSFER_AAVE_PERMISSION_ID,
+        ]
       ]);
     });
 

@@ -1,9 +1,11 @@
 {
-    "ui": "",
-    "change": "",
-    "pluginSetupABI": {
-      "prepareInstallation": [],
-      "prepareUpdate": [],
-      "prepareUninstallation": []
-    }
+  "ui": "",
+  "change": "",
+  "pluginSetupABI": {
+    "prepareInstallation": [
+      "(uint8 votingMode,uint32 supportThreshold,uint32 minParticipation,uint64 minDuration,uint256 minProposerVotingPower)"
+    ],
+    "prepareUpdate": [],
+    "prepareUninstallation": []
   }
+}
