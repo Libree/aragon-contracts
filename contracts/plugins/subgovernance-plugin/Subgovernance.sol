@@ -3,8 +3,8 @@
 pragma solidity 0.8.17;
 
 import {SafeCastUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
-import {IDAO} from "@aragon/osx/core/dao/IDAO.sol";
 import {RATIO_BASE, _applyRatioCeiled} from "@aragon/osx/plugins/utils/Ratio.sol";
+import {IDAO} from "@aragon/osx/core/plugin/PluginUUPSUpgradeable.sol";
 
 import {IMajorityVoting} from "@aragon/osx/plugins/governance/majority-voting/IMajorityVoting.sol";
 import {MajorityVotingBase} from "@aragon/osx/plugins/governance/majority-voting/MajorityVotingBase.sol";
@@ -20,10 +20,7 @@ contract Subgovernance is MajorityVotingBase {
     using Counters for Counters.Counter;
 
     /// @notice The [ERC-165](https://eips.ethereum.org/EIPS/eip-165) interface ID of the contract.
-    bytes4 internal constant GROUPLIST_VOTING_INTERFACE_ID =
-        this.initialize.selector ^
-            this.addAddresses.selector ^
-            this.removeAddresses.selector;
+    bytes4 internal constant GROUPLIST_VOTING_INTERFACE_ID = this.initialize.selector;
 
     /// @notice The ID of the permission required to call the `addAddresses` and `removeAddresses` functions.
     bytes32 public constant UPDATE_ADDRESSES_PERMISSION_ID =

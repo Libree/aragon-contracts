@@ -9,8 +9,16 @@ import {
   Subgovernance__factory
 } from '../typechain-types';
 
+import {
+  VotingSettings,
+  VotingMode,
+  pctToRatio,
+  ONE_HOUR,
+} from './utils/voting';
+
 let defaultData: any;
 const abiCoder = ethers.utils.defaultAbiCoder;
+let defaultVotingSettings: VotingSettings;
 
 describe('SubgovernanceSetup', function () {
   let signers: SignerWithAddress[];
@@ -27,7 +35,17 @@ describe('SubgovernanceSetup', function () {
 
     subgovernanceSetup = await SubgovernanceSetup.deploy();
 
-    defaultData = abiCoder.encode(metadata.pluginSetupABI.prepareInstallation, []);
+    defaultVotingSettings = {
+      votingMode: VotingMode.EarlyExecution,
+      supportThreshold: pctToRatio(50),
+      minParticipation: pctToRatio(20),
+      minDuration: ONE_HOUR,
+      minProposerVotingPower: 0,
+    };
+
+    defaultData = abiCoder.encode(metadata.pluginSetupABI.prepareInstallation, [
+      Object.values(defaultVotingSettings)
+    ]);
   });
 
 
@@ -60,7 +78,7 @@ describe('SubgovernanceSetup', function () {
 
       expect(plugin).to.be.equal(anticipatedPluginAddress);
       expect(helpers.length).to.be.equal(0);
-      expect(permissions.length).to.be.equal(0);
+      expect(permissions.length).to.be.equal(2);
     });
 
     it('correctly sets up the plugin', async () => {
