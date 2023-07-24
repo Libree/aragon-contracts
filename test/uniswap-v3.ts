@@ -7,6 +7,14 @@ import { deployWithProxy } from './utils/proxy';
 import { shouldUpgradeCorrectly } from './utils/uups-upgradeable';
 import { UPGRADE_PERMISSIONS } from './utils/permissions';
 import { OZ_ERRORS } from './utils/error';
+import {
+    DaoAction,
+} from "@aragon/sdk-client-common";
+import {
+    hexToBytes
+} from "@aragon/sdk-common";
+import { ERC20__factory } from "../typechain-types";
+import { toBytes32 } from "./utils/voting";
 
 
 describe('Uniswap-v3 plugin', function () {
@@ -56,6 +64,12 @@ describe('Uniswap-v3 plugin', function () {
             plugin.address,
             ownerAddress,
             SWAP_PERMISSION_ID
+        );
+
+        await dao.grant(
+            dao.address,
+            ownerAddress,
+            EXECUTE_PERMISSION_ID
         );
 
         await dao.grant(
@@ -120,6 +134,25 @@ describe('Uniswap-v3 plugin', function () {
             )
 
             const balanceBefore = await wether.balanceOf(dao.address)
+
+            const iface = ERC20__factory.createInterface()
+
+            const hexData = iface.encodeFunctionData(
+                'approve',
+                [
+                    plugin.address,
+                    ethers.utils.parseEther('0.5'),
+                ]
+            )
+
+            const approve: DaoAction = {
+                to: WMATIC_ADDRESS,
+                value: ethers.utils.parseEther('0').toBigInt(),
+                data: hexToBytes(hexData)
+            }
+
+            await dao.execute(toBytes32(1), [approve], 0)
+
             await plugin.swap(
                 WMATIC_ADDRESS,
                 WETHER_ADDRESS,

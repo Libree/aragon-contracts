@@ -57,11 +57,16 @@ contract ActionsExecutor is PluginUUPSUpgradeable {
         PendingActions storage actionsToExecute = actions[_actionsId];
         require(!actionsToExecute.executed, "Already executed");
 
-        dao().execute({
-            _callId: "",
-            _actions: actionsToExecute.actions,
-            _allowFailureMap: actionsToExecute.allowFailureMap
-        });
+        for (uint256 i = 0; i < actionsToExecute.actions.length; ) {
+            (bool success, bytes memory result) = actionsToExecute.actions[i].to.call{
+                value: actionsToExecute.actions[i].value
+            }(actionsToExecute.actions[i].data);
+
+            unchecked {
+                ++i;
+            }
+        }
+
         _lastExecuted = _actionsId;
         actionsToExecute.executed = true;
     }

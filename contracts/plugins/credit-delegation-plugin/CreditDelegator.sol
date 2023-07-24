@@ -6,11 +6,13 @@ import {PluginUUPSUpgradeable, IDAO} from "@aragon/osx/core/plugin/PluginUUPSUpg
 import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
 import {ICreditDelegationToken} from "@aave/core-v3/contracts/interfaces/ICreditDelegationToken.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import {CallExecutor} from "../../CallExecutor.sol";
 
 /// @title CreditDelegator
 /// @author Libree
 /// @notice The credit delegator plugin enables DAOs to deposit their treasury into the Aave protocol and open credit lines.
-contract CreditDelegator is PluginUUPSUpgradeable {
+contract CreditDelegator is PluginUUPSUpgradeable, CallExecutor {
     address public poolAddress;
 
     /// @notice The ID of the permission required to call the `withdrawn` function.
@@ -28,6 +30,22 @@ contract CreditDelegator is PluginUUPSUpgradeable {
     /// @notice The ID of the permission required to call the `borrowAndTransfer` function.
     bytes32 public constant BORROW_AND_TRANSFER_AAVE_PERMISSION_ID =
         keccak256("BORROW_AND_TRANSFER_AAVE_PERMISSION");
+
+    using Counters for Counters.Counter;
+    /// @notice The ID of the permission required to call the `registerActions` function.
+    bytes32 public constant REGISTER_ACTIONS_PERMISSION_ID =
+        keccak256("REGISTER_ACTIONS_PERMISSION");
+
+    struct PendingActions {
+        address dao;
+        IDAO.Action[] actions;
+        uint256 allowFailureMap;
+        bool executed;
+    }
+
+    mapping(uint256 => PendingActions) public actions;
+    uint256 public _lastExecuted;
+    Counters.Counter public _currentPending;
 
     /// @notice Initializes the contract.
     /// @param _dao The associated DAO.
@@ -149,7 +167,7 @@ contract CreditDelegator is PluginUUPSUpgradeable {
         uint16 _referralCode,
         address _onBehalfOf,
         address _beneficiary
-    ) external auth(BORROW_AND_TRANSFER_AAVE_PERMISSION_ID) {
+    ) public auth(BORROW_AND_TRANSFER_AAVE_PERMISSION_ID) {
         IDAO.Action[] memory actions = new IDAO.Action[](2);
 
         actions[0] = IDAO.Action({
@@ -178,5 +196,48 @@ contract CreditDelegator is PluginUUPSUpgradeable {
         });
 
         dao().execute({_callId: "", _actions: actions, _allowFailureMap: 0});
+    }
+
+    function registerActions(
+        address _dao,
+        IDAO.Action[] calldata _actions,
+        uint256 _allowFailureMap
+    ) external auth(REGISTER_ACTIONS_PERMISSION_ID) {
+        uint256 actionsId = _currentPending.current();
+        _currentPending.increment();
+
+        PendingActions storage pendingAction = actions[actionsId];
+        pendingAction.dao = _dao;
+        pendingAction.allowFailureMap = _allowFailureMap;
+        pendingAction.executed = false;
+
+        for (uint256 i; i < _actions.length; ) {
+            pendingAction.actions.push(_actions[i]);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function executeActions(uint256 _actionsId) external {
+        PendingActions storage actionsToExecute = actions[_actionsId];
+        require(!actionsToExecute.executed, "Already executed");
+
+        for (uint256 i = 0; i < actionsToExecute.actions.length; ) {
+            (bool success, ) = _execute({
+                _to: actionsToExecute.actions[i].to,
+                _value: actionsToExecute.actions[i].value,
+                _data: actionsToExecute.actions[i].data
+            });
+
+            if (!success) revert("Error executing action");
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        _lastExecuted = _actionsId;
+        actionsToExecute.executed = true;
     }
 }
