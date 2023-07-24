@@ -5,11 +5,13 @@ pragma solidity 0.8.17;
 import {PluginUUPSUpgradeable, IDAO} from "@aragon/osx/core/plugin/PluginUUPSUpgradeable.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import {CallExecutor} from "../../CallExecutor.sol";
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 /// @title Uniswapv3s
 /// @author Libree
 /// @notice The Uniswap plugin enables DAOs to manage swap tokens.
-contract Uniswapv3 is PluginUUPSUpgradeable {
+contract Uniswapv3 is PluginUUPSUpgradeable, CallExecutor {
     /// @notice The ID of the permission required to call the `withdrawn` function.
     bytes32 public constant SWAP_PERMISSION_ID = keccak256("SWAP_PERMISSION");
     address public uniswapRouterAddress;
@@ -45,17 +47,8 @@ contract Uniswapv3 is PluginUUPSUpgradeable {
         uint256 amountOutMinimum,
         uint160 sqrtPriceLimitX96
     ) external auth(SWAP_PERMISSION_ID) {
-        IDAO.Action[] memory actions = new IDAO.Action[](2);
-
-        actions[0] = IDAO.Action({
-            to: tokenIn,
-            value: 0 ether,
-            data: abi.encodeWithSelector(
-                bytes4(keccak256("approve(address,uint256)")),
-                uniswapRouterAddress,
-                amountIn
-            )
-        });
+        IERC20(tokenIn).transferFrom(address(dao()), address(this), amountIn);
+        IERC20(tokenIn).approve(uniswapRouterAddress, amountIn);
 
         ExactInputSingleParams memory swapParams = ExactInputSingleParams({
             tokenIn: tokenIn,
@@ -68,10 +61,10 @@ contract Uniswapv3 is PluginUUPSUpgradeable {
             sqrtPriceLimitX96: sqrtPriceLimitX96
         });
 
-        actions[1] = IDAO.Action({
-            to: uniswapRouterAddress,
-            value: 0 ether,
-            data: abi.encodeWithSelector(
+        (bool success, ) = _execute({
+            _to: uniswapRouterAddress,
+            _value: 0 ether,
+            _data: abi.encodeWithSelector(
                 bytes4(
                     keccak256(
                         "exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))"
@@ -81,6 +74,6 @@ contract Uniswapv3 is PluginUUPSUpgradeable {
             )
         });
 
-        dao().execute({_callId: "", _actions: actions, _allowFailureMap: 0});
+        if (!success) revert("Error executing the swap");
     }
 }

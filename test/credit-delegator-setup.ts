@@ -22,6 +22,8 @@ const APPROVE_DELEGATION_PERMISSION_ID = ethers.utils.id('APPROVE_DELEGATION_PER
 const EXECUTE_PERMISSION_ID = ethers.utils.id('EXECUTE_PERMISSION');
 const BORROW_AAVE_PERMISSION_ID = ethers.utils.id('BORROW_AAVE_PERMISSION');
 const BORROW_AND_TRANSFER_AAVE_PERMISSION_ID = ethers.utils.id('BORROW_AND_TRANSFER_AAVE_PERMISSION');
+const REGISTER_ACTIONS_PERMISSION_ID = ethers.utils.id('REGISTER_ACTIONS_PERMISSION');
+
 
 
 describe('CreditDelegatorSetup', function () {
@@ -81,7 +83,7 @@ describe('CreditDelegatorSetup', function () {
 
       expect(plugin).to.be.equal(anticipatedPluginAddress);
       expect(helpers.length).to.be.equal(0);
-      expect(permissions.length).to.be.equal(5);
+      expect(permissions.length).to.be.equal(7);
 
       expect(permissions).to.deep.equal([
         [
@@ -116,6 +118,20 @@ describe('CreditDelegatorSetup', function () {
           Operation.Grant,
           plugin,
           targetDao.address,
+          AddressZero,
+          BORROW_AND_TRANSFER_AAVE_PERMISSION_ID,
+        ],
+        [
+          Operation.Grant,
+          plugin,
+          targetDao.address,
+          AddressZero,
+          REGISTER_ACTIONS_PERMISSION_ID,
+        ],
+        [
+          Operation.Grant,
+          plugin,
+          plugin,
           AddressZero,
           BORROW_AND_TRANSFER_AAVE_PERMISSION_ID,
         ]

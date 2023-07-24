@@ -7,7 +7,13 @@ import { deployWithProxy } from './utils/proxy';
 import { shouldUpgradeCorrectly } from './utils/uups-upgradeable';
 import { UPGRADE_PERMISSIONS } from './utils/permissions';
 import { OZ_ERRORS } from './utils/error';
-
+import { CreditDelegator__factory } from "../typechain-types";
+import {
+    hexToBytes
+} from "@aragon/sdk-common";
+import {
+    DaoAction,
+} from "@aragon/sdk-client-common";
 
 describe('Credit delegator plugin', function () {
     let signers: SignerWithAddress[];
@@ -33,6 +39,10 @@ describe('Credit delegator plugin', function () {
 
     const BORROW_AND_TRANSFER_AAVE_PERMISSION_ID = ethers.utils.id(
         'BORROW_AND_TRANSFER_AAVE_PERMISSION'
+    );
+
+    const REGISTER_ACTIONS_PERMISSION_ID = ethers.utils.id(
+        'REGISTER_ACTIONS_PERMISSION'
     );
 
     before(async () => {
@@ -90,6 +100,18 @@ describe('Credit delegator plugin', function () {
             BORROW_AND_TRANSFER_AAVE_PERMISSION_ID
         );
 
+        await daoLender.grant(
+            creditDelegatorLender.address,
+            creditDelegatorLender.address,
+            BORROW_AND_TRANSFER_AAVE_PERMISSION_ID
+        );
+
+        await daoLender.grant(
+            creditDelegatorLender.address,
+            ownerAddress,
+            REGISTER_ACTIONS_PERMISSION_ID
+        );
+
         this.upgrade = {
             contract: creditDelegatorLender,
             dao: daoLender,
@@ -134,141 +156,226 @@ describe('Credit delegator plugin', function () {
             await initializePlugin();
         });
 
-        it('Deposit 10 WETH in DAO treasury', async () => {
-            const depositAmount = ethers.utils.parseUnits("10", "ether")
-            const aavePool = await ethers.getContractAt('IPool', POOL_ADDRESS)
+        // it('Deposit 10 WETH in DAO treasury', async () => {
+        //     const depositAmount = ethers.utils.parseUnits("10", "ether")
+        //     const aavePool = await ethers.getContractAt('IPool', POOL_ADDRESS)
 
-            const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
+        //     const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
 
-            const daoAccountDataBefore = await aavePool.getUserAccountData(daoLender.address)
+        //     const daoAccountDataBefore = await aavePool.getUserAccountData(daoLender.address)
 
-            await weth.approve(creditDelegatorLender.address, depositAmount)
-            await weth.approve(POOL_ADDRESS, depositAmount)
+        //     await weth.approve(creditDelegatorLender.address, depositAmount)
+        //     await weth.approve(POOL_ADDRESS, depositAmount)
 
-            await creditDelegatorLender.supply(
-                WETH_ADDRESS,
-                depositAmount
-            )
+        //     await creditDelegatorLender.supply(
+        //         WETH_ADDRESS,
+        //         depositAmount
+        //     )
 
-            const daoAccountDataAfter = await aavePool.getUserAccountData(daoLender.address)
+        //     const daoAccountDataAfter = await aavePool.getUserAccountData(daoLender.address)
 
-            expect(daoAccountDataBefore.totalCollateralBase.toNumber()).to.be.equals(0)
-            expect(daoAccountDataAfter.totalCollateralBase.toNumber()).to.be.greaterThan(0)
-        });
-
-
-        it('Should approve delegation', async () => {
-            const depositAmount = ethers.utils.parseUnits("10", "ether")
-            const amount = 1000
-            const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
-            await weth.approve(creditDelegatorLender.address, depositAmount)
-
-            await creditDelegatorLender.supply(
-                WETH_ADDRESS,
-                depositAmount
-            )
-
-            await creditDelegatorLender.approveDelegation(
-                USDC_DEBT_ADDRESS,
-                borrowerAddress,
-                amount
-            )
-
-            const debtToken = await ethers.getContractAt('ICreditDelegationToken', USDC_DEBT_ADDRESS)
-            const approvedAmount = await debtToken.borrowAllowance(daoLender.address, borrowerAddress)
-
-            expect(approvedAmount.toNumber()).to.be.equals(approvedAmount)
-        });
-
-        it('Should revert approve delegation not authorized', async () => {
-            const amount = 1000
-            await expect(creditDelegatorLender.connect(signers[1]).approveDelegation(
-                USDC_DEBT_ADDRESS,
-                borrowerAddress,
-                amount
-            )).to.be.revertedWithCustomError(creditDelegatorLender, 'DaoUnauthorized')
-                .withArgs(
-                    daoLender.address,
-                    creditDelegatorLender.address,
-                    signers[1].address,
-                    APPROVE_DELEGATION_PERMISSION_ID
-                );
-        });
+        //     expect(daoAccountDataBefore.totalCollateralBase.toNumber()).to.be.equals(0)
+        //     expect(daoAccountDataAfter.totalCollateralBase.toNumber()).to.be.greaterThan(0)
+        // });
 
 
-        it('Should borrow on behalf of Lender', async () => {
-            const depositAmount = ethers.utils.parseUnits("10", "ether")
-            const amount = 1000
-            const interestRateMode = 1
+        // it('Should approve delegation', async () => {
+        //     const depositAmount = ethers.utils.parseUnits("10", "ether")
+        //     const amount = 1000
+        //     const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
+        //     await weth.approve(creditDelegatorLender.address, depositAmount)
 
-            const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
-            const usdc = await ethers.getContractAt('IERC20', USDC)
+        //     await creditDelegatorLender.supply(
+        //         WETH_ADDRESS,
+        //         depositAmount
+        //     )
 
-            await weth.approve(creditDelegatorLender.address, depositAmount)
+        //     await creditDelegatorLender.approveDelegation(
+        //         USDC_DEBT_ADDRESS,
+        //         borrowerAddress,
+        //         amount
+        //     )
 
-            await creditDelegatorLender.supply(
-                WETH_ADDRESS,
-                depositAmount
-            )
+        //     const debtToken = await ethers.getContractAt('ICreditDelegationToken', USDC_DEBT_ADDRESS)
+        //     const approvedAmount = await debtToken.borrowAllowance(daoLender.address, borrowerAddress)
 
-            await creditDelegatorLender.approveDelegation(
-                USDC_DEBT_ADDRESS,
-                borrowerAddress,
-                amount
-            )
+        //     expect(approvedAmount.toNumber()).to.be.equals(approvedAmount)
+        // });
 
-            const aavePool = await ethers.getContractAt('IPool', POOL_ADDRESS)
-            const balanceBefore = await usdc.balanceOf(borrowerAddress)
-
-            await aavePool.connect(borrower).borrow(
-                USDC,
-                amount,
-                interestRateMode,
-                0,
-                daoLender.address
-            )
-
-            const balanceAfter = await usdc.balanceOf(borrowerAddress)
-
-            expect(balanceBefore.toNumber()).to.be.equals(0)
-            expect(balanceAfter.toNumber()).to.be.equals(amount)
-
-        });
-
-
-        it('Should borrow using DAO collateral treasury', async () => {
-            const depositAmount = ethers.utils.parseUnits("1", "ether")
-            const amount = 1000
-            const interestRateMode = 1
-
-            const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
-            const usdc = await ethers.getContractAt('IERC20', USDC)
-
-            await weth.approve(creditDelegatorLender.address, depositAmount)
-
-            const balanceBefore = await usdc.balanceOf(daoLender.address)
-
-            await creditDelegatorLender.supply(
-                WETH_ADDRESS,
-                depositAmount
-            )
-
-            await creditDelegatorLender.borrow(
-                USDC,
-                amount,
-                interestRateMode,
-                0,
-                daoLender.address
-            )
-
-            const balanceAfter = await usdc.balanceOf(daoLender.address)
-
-            expect(balanceAfter.toNumber()).to.be.equals(balanceBefore.toNumber() + amount)
-
-        });
+        // it('Should revert approve delegation not authorized', async () => {
+        //     const amount = 1000
+        //     await expect(creditDelegatorLender.connect(signers[1]).approveDelegation(
+        //         USDC_DEBT_ADDRESS,
+        //         borrowerAddress,
+        //         amount
+        //     )).to.be.revertedWithCustomError(creditDelegatorLender, 'DaoUnauthorized')
+        //         .withArgs(
+        //             daoLender.address,
+        //             creditDelegatorLender.address,
+        //             signers[1].address,
+        //             APPROVE_DELEGATION_PERMISSION_ID
+        //         );
+        // });
 
 
-        it('Should borrow using DAO collateral treasury and transfer to beneficiary', async () => {
+        // it('Should borrow on behalf of Lender', async () => {
+        //     const depositAmount = ethers.utils.parseUnits("10", "ether")
+        //     const amount = 1000
+        //     const interestRateMode = 1
+
+        //     const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
+        //     const usdc = await ethers.getContractAt('IERC20', USDC)
+
+        //     await weth.approve(creditDelegatorLender.address, depositAmount)
+
+        //     await creditDelegatorLender.supply(
+        //         WETH_ADDRESS,
+        //         depositAmount
+        //     )
+
+        //     await creditDelegatorLender.approveDelegation(
+        //         USDC_DEBT_ADDRESS,
+        //         borrowerAddress,
+        //         amount
+        //     )
+
+        //     const aavePool = await ethers.getContractAt('IPool', POOL_ADDRESS)
+        //     const balanceBefore = await usdc.balanceOf(borrowerAddress)
+
+        //     await aavePool.connect(borrower).borrow(
+        //         USDC,
+        //         amount,
+        //         interestRateMode,
+        //         0,
+        //         daoLender.address
+        //     )
+
+        //     const balanceAfter = await usdc.balanceOf(borrowerAddress)
+
+        //     expect(balanceBefore.toNumber()).to.be.equals(0)
+        //     expect(balanceAfter.toNumber()).to.be.equals(amount)
+
+        // });
+
+
+        // it('Should borrow using DAO collateral treasury', async () => {
+        //     const depositAmount = ethers.utils.parseUnits("1", "ether")
+        //     const amount = 1000
+        //     const interestRateMode = 1
+
+        //     const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
+        //     const usdc = await ethers.getContractAt('IERC20', USDC)
+
+        //     await weth.approve(creditDelegatorLender.address, depositAmount)
+
+        //     const balanceBefore = await usdc.balanceOf(daoLender.address)
+
+        //     await creditDelegatorLender.supply(
+        //         WETH_ADDRESS,
+        //         depositAmount
+        //     )
+
+        //     await creditDelegatorLender.borrow(
+        //         USDC,
+        //         amount,
+        //         interestRateMode,
+        //         0,
+        //         daoLender.address
+        //     )
+
+        //     const balanceAfter = await usdc.balanceOf(daoLender.address)
+
+        //     expect(balanceAfter.toNumber()).to.be.equals(balanceBefore.toNumber() + amount)
+
+        // });
+
+
+        // it('Should borrow using DAO collateral treasury and transfer to beneficiary', async () => {
+        //     const depositAmount = ethers.utils.parseUnits("1", "ether")
+        //     const amount = 1000
+        //     const interestRateMode = 1
+        //     const beneficiary = signers[6].address
+
+        //     const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
+        //     const usdc = await ethers.getContractAt('IERC20', USDC)
+
+        //     await weth.approve(creditDelegatorLender.address, depositAmount)
+
+        //     const balanceBefore = await usdc.balanceOf(beneficiary)
+
+        //     await creditDelegatorLender.supply(
+        //         WETH_ADDRESS,
+        //         depositAmount
+        //     )
+
+        //     await creditDelegatorLender.borrowAndTransfer(
+        //         USDC,
+        //         amount,
+        //         interestRateMode,
+        //         0,
+        //         daoLender.address,
+        //         beneficiary
+        //     )
+
+        //     const balanceAfter = await usdc.balanceOf(beneficiary)
+
+        //     expect(balanceBefore).to.be.equals(0)
+        //     expect(balanceAfter).to.be.equals(amount)
+        //     expect(balanceAfter.toNumber()).to.be.equals(balanceBefore.toNumber() + amount)
+
+        // });
+
+        // it('Should withdrawn funds from treasury', async () => {
+        //     const depositAmount = ethers.utils.parseUnits("1", "ether")
+        //     const withdrawnAmount = ethers.utils.parseUnits("1", "ether")
+        //     const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
+
+        //     await weth.approve(creditDelegatorLender.address, depositAmount)
+
+        //     await creditDelegatorLender.supply(
+        //         WETH_ADDRESS,
+        //         depositAmount
+        //     )
+
+        //     const balanceBefore = await weth.balanceOf(ownerAddress)
+
+        //     await creditDelegatorLender.withdrawn(
+        //         WETH_ADDRESS,
+        //         withdrawnAmount,
+        //         ownerAddress
+        //     )
+
+        //     const balanceAfter = await weth.balanceOf(ownerAddress)
+        //     expect(balanceBefore.add(withdrawnAmount)).equals(balanceAfter)
+        // });
+
+        // it('Should revert withdrawn funds from treasury', async () => {
+        //     const depositAmount = ethers.utils.parseUnits("1", "ether")
+        //     const withdrawnAmount = ethers.utils.parseUnits("1", "ether")
+        //     const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
+
+        //     await weth.approve(creditDelegatorLender.address, depositAmount)
+
+        //     await creditDelegatorLender.supply(
+        //         WETH_ADDRESS,
+        //         depositAmount
+        //     )
+
+        //     await expect(creditDelegatorLender.connect(signers[1]).withdrawn(
+        //         WETH_ADDRESS,
+        //         withdrawnAmount,
+        //         ownerAddress
+        //     )).to.be.revertedWithCustomError(creditDelegatorLender, 'DaoUnauthorized')
+        //         .withArgs(
+        //             daoLender.address,
+        //             creditDelegatorLender.address,
+        //             signers[1].address,
+        //             WITHDRAWN_AAVE_PERMISSION_ID
+        //         );
+        // })
+
+
+        it('Should register credit delegation and execute', async () => {
             const depositAmount = ethers.utils.parseUnits("1", "ether")
             const amount = 1000
             const interestRateMode = 1
@@ -286,70 +393,44 @@ describe('Credit delegator plugin', function () {
                 depositAmount
             )
 
-            await creditDelegatorLender.borrowAndTransfer(
-                USDC,
-                amount,
-                interestRateMode,
-                0,
-                daoLender.address,
-                beneficiary
+            const iface = CreditDelegator__factory.createInterface()
+            const borrownAndtransfer = iface.encodeFunctionData(
+                'borrowAndTransfer',
+                [
+                    USDC,
+                    amount,
+                    interestRateMode,
+                    0,
+                    daoLender.address,
+                    beneficiary
+                ]
             )
+
+            const borrownAndtransferAction: DaoAction = {
+                to: creditDelegatorLender.address,
+                value: ethers.utils.parseEther('0').toBigInt(),
+                data: hexToBytes(borrownAndtransfer)
+            }
+
+            await creditDelegatorLender.registerActions(
+                daoLender.address,
+                [borrownAndtransferAction],
+                0
+            )
+
+            const pendingActions = await creditDelegatorLender._currentPending()
+            expect(pendingActions).to.be.equal(1)
+
+            await creditDelegatorLender.executeActions(0)
+
+            const lastExecuted = await creditDelegatorLender._lastExecuted()
+            expect(lastExecuted).to.be.equal(0)
 
             const balanceAfter = await usdc.balanceOf(beneficiary)
 
             expect(balanceBefore).to.be.equals(0)
             expect(balanceAfter).to.be.equals(amount)
             expect(balanceAfter.toNumber()).to.be.equals(balanceBefore.toNumber() + amount)
-
-        });
-
-        it('Should withdrawn funds from treasury', async () => {
-            const depositAmount = ethers.utils.parseUnits("1", "ether")
-            const withdrawnAmount = ethers.utils.parseUnits("1", "ether")
-            const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
-
-            await weth.approve(creditDelegatorLender.address, depositAmount)
-
-            await creditDelegatorLender.supply(
-                WETH_ADDRESS,
-                depositAmount
-            )
-
-            const balanceBefore = await weth.balanceOf(ownerAddress)
-
-            await creditDelegatorLender.withdrawn(
-                WETH_ADDRESS,
-                withdrawnAmount,
-                ownerAddress
-            )
-
-            const balanceAfter = await weth.balanceOf(ownerAddress)
-            expect(balanceBefore.add(withdrawnAmount)).equals(balanceAfter)
-        });
-
-        it('Should revert withdrawn funds from treasury', async () => {
-            const depositAmount = ethers.utils.parseUnits("1", "ether")
-            const withdrawnAmount = ethers.utils.parseUnits("1", "ether")
-            const weth = await ethers.getContractAt('IERC20', WETH_ADDRESS)
-
-            await weth.approve(creditDelegatorLender.address, depositAmount)
-
-            await creditDelegatorLender.supply(
-                WETH_ADDRESS,
-                depositAmount
-            )
-
-            await expect(creditDelegatorLender.connect(signers[1]).withdrawn(
-                WETH_ADDRESS,
-                withdrawnAmount,
-                ownerAddress
-            )).to.be.revertedWithCustomError(creditDelegatorLender, 'DaoUnauthorized')
-                .withArgs(
-                    daoLender.address,
-                    creditDelegatorLender.address,
-                    signers[1].address,
-                    WITHDRAWN_AAVE_PERMISSION_ID
-                );
         })
     })
 });

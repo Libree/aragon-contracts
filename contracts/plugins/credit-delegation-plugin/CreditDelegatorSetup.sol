@@ -42,7 +42,7 @@ contract CreditDelegatorSetup is PluginSetup {
 
         // Prepare permissions
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](5);
+            memory permissions = new PermissionLib.MultiTargetPermission[](7);
 
         // Grant `EXECUTE_PERMISSION` on the DAO to the plugin.
         permissions[0] = PermissionLib.MultiTargetPermission(
@@ -85,6 +85,22 @@ contract CreditDelegatorSetup is PluginSetup {
             creditDelegator.BORROW_AND_TRANSFER_AAVE_PERMISSION_ID()
         );
 
+        permissions[5] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Grant,
+            plugin,
+            _dao,
+            PermissionLib.NO_CONDITION,
+            creditDelegator.REGISTER_ACTIONS_PERMISSION_ID()
+        );
+
+        permissions[6] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Grant,
+            plugin,
+            plugin,
+            PermissionLib.NO_CONDITION,
+            creditDelegator.BORROW_AND_TRANSFER_AAVE_PERMISSION_ID()
+        );
+
         preparedSetupData.permissions = permissions;
     }
 
@@ -98,7 +114,7 @@ contract CreditDelegatorSetup is PluginSetup {
         returns (PermissionLib.MultiTargetPermission[] memory permissions)
     {
         // Prepare permissions
-        permissions = new PermissionLib.MultiTargetPermission[](5);
+        permissions = new PermissionLib.MultiTargetPermission[](7);
 
         permissions[0] = PermissionLib.MultiTargetPermission(
             PermissionLib.Operation.Revoke,
@@ -124,7 +140,7 @@ contract CreditDelegatorSetup is PluginSetup {
             creditDelegator.APPROVE_DELEGATION_PERMISSION_ID()
         );
 
-        permissions[2] = PermissionLib.MultiTargetPermission(
+        permissions[3] = PermissionLib.MultiTargetPermission(
             PermissionLib.Operation.Revoke,
             _payload.plugin,
             _dao,
@@ -132,10 +148,26 @@ contract CreditDelegatorSetup is PluginSetup {
             creditDelegator.BORROW_AAVE_PERMISSION_ID()
         );
 
-        permissions[2] = PermissionLib.MultiTargetPermission(
+        permissions[4] = PermissionLib.MultiTargetPermission(
             PermissionLib.Operation.Revoke,
             _payload.plugin,
             _dao,
+            PermissionLib.NO_CONDITION,
+            creditDelegator.BORROW_AND_TRANSFER_AAVE_PERMISSION_ID()
+        );
+
+        permissions[5] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Revoke,
+            _payload.plugin,
+            _dao,
+            PermissionLib.NO_CONDITION,
+            creditDelegator.REGISTER_ACTIONS_PERMISSION_ID()
+        );
+
+        permissions[6] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Revoke,
+            _payload.plugin,
+            _payload.plugin,
             PermissionLib.NO_CONDITION,
             creditDelegator.BORROW_AND_TRANSFER_AAVE_PERMISSION_ID()
         );
