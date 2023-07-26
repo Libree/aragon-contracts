@@ -2,7 +2,7 @@
     "ui": "",
     "change": "",
     "pluginSetupABI": {
-      "prepareInstallation": ["address uniswapRouterAddress"],
+      "prepareInstallation": ["address uniswapRouterAddress", "address nonfungiblePositionManagerAddress"],
       "prepareUpdate": [],
       "prepareUninstallation": []
     }

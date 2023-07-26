@@ -28,7 +28,10 @@ contract Uniswapv3Setup is PluginSetup {
         external
         returns (address plugin, PreparedSetupData memory preparedSetupData)
     {
-        address uniswapRouterAddress = abi.decode(_data, (address));
+        (
+            address uniswapRouterAddress,
+            address nonfungiblePositionManagerAddress
+        ) = abi.decode(_data, (address, address));
 
         // Prepare and Deploy the plugin proxy.
         plugin = createERC1967Proxy(
@@ -36,21 +39,29 @@ contract Uniswapv3Setup is PluginSetup {
             abi.encodeWithSelector(
                 Uniswapv3.initialize.selector,
                 _dao,
-                uniswapRouterAddress
+                uniswapRouterAddress,
+                nonfungiblePositionManagerAddress
             )
         );
 
         // Prepare permissions
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](1);
+            memory permissions = new PermissionLib.MultiTargetPermission[](2);
 
-        // Grant `EXECUTE_PERMISSION` on the DAO to the plugin.
         permissions[0] = PermissionLib.MultiTargetPermission(
             PermissionLib.Operation.Grant,
-            _dao,
             plugin,
+            _dao,
             PermissionLib.NO_CONDITION,
-            DAO(payable(_dao)).EXECUTE_PERMISSION_ID()
+            uniswapv3.SWAP_PERMISSION_ID()
+        );
+
+        permissions[1] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Grant,
+            plugin,
+            _dao,
+            PermissionLib.NO_CONDITION,
+            uniswapv3.PROVIDE_LIQUIDITY_PERMISSION_ID()
         );
 
         preparedSetupData.permissions = permissions;
@@ -65,14 +76,22 @@ contract Uniswapv3Setup is PluginSetup {
         view
         returns (PermissionLib.MultiTargetPermission[] memory permissions)
     {
-        permissions = new PermissionLib.MultiTargetPermission[](1);
+        permissions = new PermissionLib.MultiTargetPermission[](2);
 
         permissions[0] = PermissionLib.MultiTargetPermission(
             PermissionLib.Operation.Revoke,
-            _dao,
             _payload.plugin,
+            _dao,
             PermissionLib.NO_CONDITION,
-            DAO(payable(_dao)).EXECUTE_PERMISSION_ID()
+            uniswapv3.SWAP_PERMISSION_ID()
+        );
+
+        permissions[1] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Revoke,
+            _payload.plugin,
+            _dao,
+            PermissionLib.NO_CONDITION,
+            uniswapv3.PROVIDE_LIQUIDITY_PERMISSION_ID()
         );
     }
 
