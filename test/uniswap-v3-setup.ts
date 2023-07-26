@@ -19,6 +19,7 @@ describe('UniswapV3Setup', function () {
   let pluginSetup: Uniswapv3Setup;
   let targetDao: any;
   const UNISWAP_ROUTER_ADDRESS: string = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
+  const UNISWAP_NON_FUNGIBLE_POSITION_ADDRESS: string = '0xc36442b4a4522e871399cd717abdd847ab11fe88';
 
   before(async () => {
     signers = await ethers.getSigners();
@@ -30,7 +31,9 @@ describe('UniswapV3Setup', function () {
 
     pluginSetup = await PluginSetup.deploy();
 
-    defaultData = abiCoder.encode(metadata.pluginSetupABI.prepareInstallation, [UNISWAP_ROUTER_ADDRESS]);
+    defaultData = abiCoder.encode(metadata.pluginSetupABI.prepareInstallation,
+      [UNISWAP_ROUTER_ADDRESS, UNISWAP_NON_FUNGIBLE_POSITION_ADDRESS]
+    );
   });
 
 
@@ -63,7 +66,7 @@ describe('UniswapV3Setup', function () {
 
       expect(plugin).to.be.equal(anticipatedPluginAddress);
       expect(helpers.length).to.be.equal(0);
-      expect(permissions.length).to.be.equal(1);
+      expect(permissions.length).to.be.equal(2);
     });
 
     it('correctly sets up the plugin', async () => {

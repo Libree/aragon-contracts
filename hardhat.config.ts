@@ -3,6 +3,7 @@ import "@nomicfoundation/hardhat-toolbox";
 import '@openzeppelin/hardhat-upgrades';
 import * as dotenv from 'dotenv';
 import "./tasks"
+require("hardhat-tracer");
 
 dotenv.config();
 
@@ -37,6 +38,13 @@ const config: HardhatUserConfig = {
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : []
     }
   },
+  etherscan: {
+    apiKey: {
+      polygonMumbai: process.env.ETHERSCAN_API || ""
+    }
+  }
 };
 
 export default config;
+
+
