@@ -178,7 +178,7 @@ describe('Uniswap-v3 plugin', function () {
             expect(balanceAfter).to.be.greaterThan(balanceBefore)
         })
 
-        it('Provide liquidity to Uniswao pool tokens in DAO treasury', async () => {
+        it('Provide liquidity to Uniswap pool tokens in DAO treasury', async () => {
             const ERC20 = await ethers.getContractFactory("ERC20");
 
             const MintNFTContract = await ethers.getContractAt('IERC721', UNISWAP_POSITION_NFT_ADDRESS)
