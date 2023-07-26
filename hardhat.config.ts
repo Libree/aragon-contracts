@@ -40,7 +40,7 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      polygonMumbai: 'S4ABE91AKTPWA2HTKTY5IHBWZ7N5IEMI11'
+      polygonMumbai: process.env.ETHERSCAN_API || ""
     }
   }
 };
