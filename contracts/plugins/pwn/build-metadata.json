@@ -1,0 +1,9 @@
+{
+    "ui": "",
+    "change": "",
+    "pluginSetupABI": {
+      "prepareInstallation": ["address pwnSimpleLoanOfferAddress", "address pwnSimpleLoanAddress"],
+      "prepareUpdate": [""],
+      "prepareUninstallation": [""]
+    }
+  }
