@@ -4,7 +4,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 import { Uniswapv3Setup } from '../typechain-types';
 import { deployNewDAO } from "./utils/dao"
-import metadata from '../contracts/plugins/uniswap-v3-plugin/build-metadata.json';
+import metadata from '../contracts/plugins/uniswap-v3/build-metadata.json';
 import {
   Uniswapv3__factory
 } from '../typechain-types';
